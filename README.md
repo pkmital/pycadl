@@ -1,5 +1,3 @@
-|build-status| |docs|
-
 # Introduction
 This package is part of the Kadenze Academy program [Creative Applications of Deep Learning w/ TensorFlow](https://www.kadenze.com/programs/creative-applications-of-deep-learning-with-tensorflow).
 
