@@ -28,9 +28,17 @@ Python 3.5+
 
 `pip install cadl`
 
+Then in ptyhon, you can import any module like so:
+
+`from cadl import vaegan`
+
+Or see a list of possible modules in an interactive console by typing:
+
+`from cadl import ` and then pressing tab to see the list of available modules.
+
 # Documentation
 
-[cadl.readthedocs.io](cadl.readthedocs.io)
+[cadl.readthedocs.io](http://cadl.readthedocs.io)
 
 # Contents 
 
