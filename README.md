@@ -11,6 +11,10 @@ Python 3.5+
 
 `pip install cadl`
 
+# Documentation
+
+[cadl.readthedocs.io](cadl.readthedocs.io)
+
 # Contents 
 
 This package contains various models, architectures, and building blocks covered in the Kadenze Academy program including:
