@@ -28,7 +28,7 @@ Python 3.5+
 
 `pip install cadl`
 
-Then in ptyhon, you can import any module like so:
+Then in python, you can import any module like so:
 
 `from cadl import vaegan`
 
