@@ -56,7 +56,7 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     classifiers=[
-        'Development Status :: 3 - Pre-Alpha',
+        #'Development Status :: 3 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.5',
