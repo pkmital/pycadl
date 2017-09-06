@@ -25,8 +25,12 @@ from cadl.datasets import CELEB
 from cadl import utils
 
 
-def encoder(x, n_hidden=None, dimensions=[], filter_sizes=[],
-            convolutional=False, activation=tf.nn.relu,
+def encoder(x,
+            n_hidden=None,
+            dimensions=[],
+            filter_sizes=[],
+            convolutional=False,
+            activation=tf.nn.relu,
             output_activation=tf.nn.sigmoid):
     """Summary
 
@@ -55,9 +59,7 @@ def encoder(x, n_hidden=None, dimensions=[], filter_sizes=[],
     if convolutional:
         x_tensor = utils.to_tensor(x)
     else:
-        x_tensor = tf.reshape(
-            tensor=x,
-            shape=[-1, dimensions[0]])
+        x_tensor = tf.reshape(tensor=x, shape=[-1, dimensions[0]])
         dimensions = dimensions[1:]
     current_input = x_tensor
 
@@ -75,9 +77,7 @@ def encoder(x, n_hidden=None, dimensions=[], filter_sizes=[],
                     k_w=filter_sizes[layer_i],
                     padding='SAME')
             else:
-                h, W = utils.linear(
-                    x=current_input,
-                    n_output=n_output)
+                h, W = utils.linear(x=current_input, n_output=n_output)
             h = activation(h)
             Ws.append(W)
             hs.append(h)
@@ -99,9 +99,13 @@ def encoder(x, n_hidden=None, dimensions=[], filter_sizes=[],
     return {'z': h, 'Ws': Ws, 'hs': hs, 'shapes': shapes}
 
 
-def decoder(z, shapes, n_hidden=None,
-            dimensions=[], filter_sizes=[],
-            convolutional=False, activation=tf.nn.relu,
+def decoder(z,
+            shapes,
+            n_hidden=None,
+            dimensions=[],
+            filter_sizes=[],
+            convolutional=False,
+            activation=tf.nn.relu,
             output_activation=tf.nn.relu):
     """Summary
 
@@ -144,7 +148,8 @@ def decoder(z, shapes, n_hidden=None,
         if convolutional:
             current_input = tf.reshape(
                 current_input,
-                tf.stack([tf.shape(current_input)[0], dims[1], dims[2], dims[3]]))
+                tf.stack(
+                    [tf.shape(current_input)[0], dims[1], dims[2], dims[3]]))
 
     Ws = []
     hs = []
@@ -152,16 +157,16 @@ def decoder(z, shapes, n_hidden=None,
         with tf.variable_scope('decoder/{}'.format(layer_i)):
             if convolutional:
                 shape = shapes[layer_i + 1]
-                h, W = utils.deconv2d(x=current_input,
-                                      n_output_h=shape[1],
-                                      n_output_w=shape[2],
-                                      n_output_ch=shape[3],
-                                      n_input_ch=shapes[layer_i][3],
-                                      k_h=filter_sizes[layer_i],
-                                      k_w=filter_sizes[layer_i])
+                h, W = utils.deconv2d(
+                    x=current_input,
+                    n_output_h=shape[1],
+                    n_output_w=shape[2],
+                    n_output_ch=shape[3],
+                    n_input_ch=shapes[layer_i][3],
+                    k_h=filter_sizes[layer_i],
+                    k_w=filter_sizes[layer_i])
             else:
-                h, W = utils.linear(x=current_input,
-                                    n_output=n_output)
+                h, W = utils.linear(x=current_input, n_output=n_output)
             if (layer_i + 1) < len(dimensions):
                 h = activation(h)
             else:
@@ -200,13 +205,13 @@ def variational_bayes(h, n_code):
     # -log(p(z)/q(z|x)), bits by coding.
     # variational bound coding costs kl(p(z|x)||q(z|x))
     # d_kl(q(z|x)||p(z))
-    loss_z = -0.5 * tf.reduce_sum(
-        1.0 + 2.0 * z_log_sigma - tf.square(z_mu) - tf.exp(2.0 * z_log_sigma),
-        1)
+    loss_z = -0.5 * tf.reduce_sum(1.0 + 2.0 * z_log_sigma - tf.square(z_mu) -
+                                  tf.exp(2.0 * z_log_sigma), 1)
     return z, z_mu, z_log_sigma, loss_z
 
 
-def discriminator(x, convolutional=True,
+def discriminator(x,
+                  convolutional=True,
                   filter_sizes=[5, 5, 5, 5],
                   activation=tf.nn.relu,
                   n_filters=[100, 100, 100, 100]):
@@ -230,19 +235,24 @@ def discriminator(x, convolutional=True,
     name : TYPE
         Description
     """
-    encoding = encoder(x=x,
-                       convolutional=convolutional,
-                       dimensions=n_filters,
-                       filter_sizes=filter_sizes,
-                       activation=activation)
+    encoding = encoder(
+        x=x,
+        convolutional=convolutional,
+        dimensions=n_filters,
+        filter_sizes=filter_sizes,
+        activation=activation)
 
     # flatten, then linear to 1 value
     res = utils.flatten(encoding['z'], name='flatten')
     if res.get_shape().as_list()[-1] > 1:
         res = utils.linear(res, 1)[0]
 
-    return {'logits': res, 'probs': tf.nn.sigmoid(res),
-            'Ws': encoding['Ws'], 'hs': encoding['hs']}
+    return {
+        'logits': res,
+        'probs': tf.nn.sigmoid(res),
+        'Ws': encoding['Ws'],
+        'hs': encoding['hs']
+    }
 
 
 def VAE(input_shape=[None, 784],
@@ -283,12 +293,13 @@ def VAE(input_shape=[None, 784],
     x = tf.placeholder(tf.float32, input_shape, 'x')
 
     with tf.variable_scope('encoder'):
-        encoding = encoder(x=x,
-                           n_hidden=n_hidden,
-                           convolutional=convolutional,
-                           dimensions=n_filters,
-                           filter_sizes=filter_sizes,
-                           activation=activation)
+        encoding = encoder(
+            x=x,
+            n_hidden=n_hidden,
+            convolutional=convolutional,
+            dimensions=n_filters,
+            filter_sizes=filter_sizes,
+            activation=activation)
 
     if variational:
         with tf.variable_scope('variational'):
@@ -305,13 +316,14 @@ def VAE(input_shape=[None, 784],
     n_filters += [input_shape[-1]]
 
     with tf.variable_scope('generator'):
-        decoding = decoder(z=z,
-                           shapes=shapes,
-                           n_hidden=n_hidden,
-                           dimensions=n_filters,
-                           filter_sizes=filter_sizes,
-                           convolutional=convolutional,
-                           activation=activation)
+        decoding = decoder(
+            z=z,
+            shapes=shapes,
+            n_hidden=n_hidden,
+            dimensions=n_filters,
+            filter_sizes=filter_sizes,
+            convolutional=convolutional,
+            activation=activation)
 
     x_tilde = decoding['x_tilde']
     x_flat = utils.flatten(x)
@@ -319,9 +331,15 @@ def VAE(input_shape=[None, 784],
 
     # -log(p(x|z))
     loss_x = tf.reduce_sum(tf.squared_difference(x_flat, x_tilde_flat), 1)
-    return {'loss_x': loss_x, 'loss_z': loss_z, 'x': x, 'z': z,
-            'Ws': encoding['Ws'], 'hs': decoding['hs'],
-            'x_tilde': x_tilde}
+    return {
+        'loss_x': loss_x,
+        'loss_z': loss_z,
+        'x': x,
+        'z': z,
+        'Ws': encoding['Ws'],
+        'hs': decoding['hs'],
+        'x_tilde': x_tilde
+    }
 
 
 def VAEGAN(input_shape=[None, 784],
@@ -363,12 +381,13 @@ def VAEGAN(input_shape=[None, 784],
     z_samp = tf.placeholder(tf.float32, [None, n_code], 'z_samp')
 
     with tf.variable_scope('encoder'):
-        encoding = encoder(x=x,
-                           n_hidden=n_hidden,
-                           convolutional=convolutional,
-                           dimensions=n_filters,
-                           filter_sizes=filter_sizes,
-                           activation=activation)
+        encoding = encoder(
+            x=x,
+            n_hidden=n_hidden,
+            convolutional=convolutional,
+            dimensions=n_filters,
+            filter_sizes=filter_sizes,
+            activation=activation)
 
         with tf.variable_scope('variational'):
             z, z_mu, z_log_sigma, loss_z = variational_bayes(
@@ -381,40 +400,45 @@ def VAEGAN(input_shape=[None, 784],
     n_filters_decoder += [input_shape[-1]]
 
     with tf.variable_scope('generator'):
-        decoding_actual = decoder(z=z,
-                                  shapes=shapes,
-                                  n_hidden=n_hidden,
-                                  convolutional=convolutional,
-                                  dimensions=n_filters_decoder,
-                                  filter_sizes=filter_sizes,
-                                  activation=activation)
+        decoding_actual = decoder(
+            z=z,
+            shapes=shapes,
+            n_hidden=n_hidden,
+            convolutional=convolutional,
+            dimensions=n_filters_decoder,
+            filter_sizes=filter_sizes,
+            activation=activation)
 
     with tf.variable_scope('generator', reuse=True):
-        decoding_sampled = decoder(z=z_samp,
-                                   shapes=shapes,
-                                   n_hidden=n_hidden,
-                                   convolutional=convolutional,
-                                   dimensions=n_filters_decoder,
-                                   filter_sizes=filter_sizes,
-                                   activation=activation)
+        decoding_sampled = decoder(
+            z=z_samp,
+            shapes=shapes,
+            n_hidden=n_hidden,
+            convolutional=convolutional,
+            dimensions=n_filters_decoder,
+            filter_sizes=filter_sizes,
+            activation=activation)
 
     with tf.variable_scope('discriminator'):
-        D_real = discriminator(x,
-                               filter_sizes=filter_sizes,
-                               n_filters=n_filters,
-                               activation=activation)
+        D_real = discriminator(
+            x,
+            filter_sizes=filter_sizes,
+            n_filters=n_filters,
+            activation=activation)
 
     with tf.variable_scope('discriminator', reuse=True):
-        D_fake = discriminator(decoding_actual['x_tilde'],
-                               filter_sizes=filter_sizes,
-                               n_filters=n_filters,
-                               activation=activation)
+        D_fake = discriminator(
+            decoding_actual['x_tilde'],
+            filter_sizes=filter_sizes,
+            n_filters=n_filters,
+            activation=activation)
 
     with tf.variable_scope('discriminator', reuse=True):
-        D_samp = discriminator(decoding_sampled['x_tilde'],
-                               filter_sizes=filter_sizes,
-                               n_filters=n_filters,
-                               activation=activation)
+        D_samp = discriminator(
+            decoding_sampled['x_tilde'],
+            filter_sizes=filter_sizes,
+            n_filters=n_filters,
+            activation=activation)
 
     with tf.variable_scope('loss'):
         # Weights influence of content/style of decoder
@@ -423,9 +447,8 @@ def VAEGAN(input_shape=[None, 784],
         # Discriminator_l Log Likelihood Loss
         loss_D_llike = 0
         for h_fake, h_real in zip(D_fake['hs'][3:], D_real['hs'][3:]):
-            loss_D_llike += tf.reduce_sum(
-                0.5 * tf.squared_difference(
-                    utils.flatten(h_fake), utils.flatten(h_real)), 1)
+            loss_D_llike += tf.reduce_sum(0.5 * tf.squared_difference(
+                utils.flatten(h_fake), utils.flatten(h_real)), 1)
 
         # GAN Loss
         eps = 1e-12
@@ -439,12 +462,22 @@ def VAEGAN(input_shape=[None, 784],
         loss_gen = tf.reduce_mean(gamma * loss_D_llike - loss_GAN)
         loss_dis = -tf.reduce_mean(loss_GAN)
 
-    return {'x': x, 'z': z, 'x_tilde': decoding_actual['x_tilde'],
-            'z_samp': z_samp, 'x_tilde_samp': decoding_sampled['x_tilde'],
-            'loss_real': loss_real, 'loss_fake': loss_fake, 'loss_samp': loss_samp,
-            'loss_GAN': loss_GAN, 'loss_D_llike': loss_D_llike,
-            'loss_enc': loss_enc, 'loss_gen': loss_gen, 'loss_dis': loss_dis,
-            'gamma': gamma}
+    return {
+        'x': x,
+        'z': z,
+        'x_tilde': decoding_actual['x_tilde'],
+        'z_samp': z_samp,
+        'x_tilde_samp': decoding_sampled['x_tilde'],
+        'loss_real': loss_real,
+        'loss_fake': loss_fake,
+        'loss_samp': loss_samp,
+        'loss_GAN': loss_GAN,
+        'loss_D_llike': loss_D_llike,
+        'loss_enc': loss_enc,
+        'loss_gen': loss_gen,
+        'loss_dis': loss_dis,
+        'gamma': gamma
+    }
 
 
 def train_vaegan(files,
@@ -506,14 +539,15 @@ def train_vaegan(files,
         Description
     """
 
-    ae = VAEGAN(input_shape=[None] + crop_shape,
-                convolutional=convolutional,
-                variational=variational,
-                n_filters=n_filters,
-                n_hidden=n_hidden,
-                n_code=n_code,
-                filter_sizes=filter_sizes,
-                activation=activation)
+    ae = VAEGAN(
+        input_shape=[None] + crop_shape,
+        convolutional=convolutional,
+        variational=variational,
+        n_filters=n_filters,
+        n_hidden=n_hidden,
+        n_code=n_code,
+        filter_sizes=filter_sizes,
+        activation=activation)
 
     batch = create_input_pipeline(
         files=files,
@@ -526,27 +560,31 @@ def train_vaegan(files,
     zs = np.random.randn(4, n_code).astype(np.float32)
     zs = utils.make_latent_manifold(zs, n_examples)
 
-    opt_enc = tf.train.AdamOptimizer(
-        learning_rate=learning_rate).minimize(
+    opt_enc = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(
         ae['loss_enc'],
-        var_list=[var_i for var_i in tf.trainable_variables()
-                  if var_i.name.startswith('encoder')])
+        var_list=[
+            var_i for var_i in tf.trainable_variables()
+            if var_i.name.startswith('encoder')
+        ])
 
-    opt_gen = tf.train.AdamOptimizer(
-        learning_rate=learning_rate).minimize(
+    opt_gen = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(
         ae['loss_gen'],
-        var_list=[var_i for var_i in tf.trainable_variables()
-                  if var_i.name.startswith('generator')])
+        var_list=[
+            var_i for var_i in tf.trainable_variables()
+            if var_i.name.startswith('generator')
+        ])
 
-    opt_dis = tf.train.AdamOptimizer(
-        learning_rate=learning_rate).minimize(
+    opt_dis = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(
         ae['loss_dis'],
-        var_list=[var_i for var_i in tf.trainable_variables()
-                  if var_i.name.startswith('discriminator')])
+        var_list=[
+            var_i for var_i in tf.trainable_variables()
+            if var_i.name.startswith('discriminator')
+        ])
 
     sess = tf.Session()
     saver = tf.train.Saver()
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
+    init_op = tf.group(tf.global_variables_initializer(),
+                       tf.local_variables_initializer())
     sess.run(init_op)
     coord = tf.train.Coordinator()
     tf.get_default_graph().finalize()
@@ -576,11 +614,10 @@ def train_vaegan(files,
             batch_i += 1
             batch_xs = sess.run(batch) / 255.0
             batch_zs = np.random.randn(batch_size, n_code).astype(np.float32)
-            real_cost, fake_cost, _ = sess.run([
-                ae['loss_real'], ae['loss_fake'], opt_enc],
-                feed_dict={
-                    ae['x']: batch_xs,
-                    ae['gamma']: 0.5})
+            real_cost, fake_cost, _ = sess.run(
+                [ae['loss_real'], ae['loss_fake'], opt_enc],
+                feed_dict={ae['x']: batch_xs,
+                           ae['gamma']: 0.5})
             real_cost = -np.mean(real_cost)
             fake_cost = -np.mean(fake_cost)
             print('real:', real_cost, '/ fake:', fake_cost)
@@ -601,42 +638,48 @@ def train_vaegan(files,
                 dis_update = True
 
             if gen_update:
-                sess.run(opt_gen, feed_dict={
-                    ae['x']: batch_xs,
-                    ae['z_samp']: batch_zs,
-                    ae['gamma']: 0.5})
+                sess.run(
+                    opt_gen,
+                    feed_dict={
+                        ae['x']: batch_xs,
+                        ae['z_samp']: batch_zs,
+                        ae['gamma']: 0.5
+                    })
             if dis_update:
-                sess.run(opt_dis, feed_dict={
-                    ae['x']: batch_xs,
-                    ae['z_samp']: batch_zs,
-                    ae['gamma']: 0.5})
+                sess.run(
+                    opt_dis,
+                    feed_dict={
+                        ae['x']: batch_xs,
+                        ae['z_samp']: batch_zs,
+                        ae['gamma']: 0.5
+                    })
 
             if batch_i % 50 == 0:
 
                 # Plot example reconstructions from latent layer
-                recon = sess.run(
-                    ae['x_tilde'], feed_dict={
-                        ae['z']: zs})
+                recon = sess.run(ae['x_tilde'], feed_dict={ae['z']: zs})
                 print('recon:', recon.min(), recon.max())
                 recon = np.clip(recon / recon.max(), 0, 1)
-                utils.montage(recon.reshape([-1] + crop_shape),
-                              'imgs/manifold_%08d.png' % t_i)
+                utils.montage(
+                    recon.reshape([-1] + crop_shape),
+                    'imgs/manifold_%08d.png' % t_i)
 
                 # Plot example reconstructions
-                recon = sess.run(
-                    ae['x_tilde'], feed_dict={
-                        ae['x']: test_xs})
+                recon = sess.run(ae['x_tilde'], feed_dict={ae['x']: test_xs})
                 print('recon:', recon.min(), recon.max())
                 recon = np.clip(recon / recon.max(), 0, 1)
-                utils.montage(recon.reshape([-1] + crop_shape),
-                              'imgs/reconstruction_%08d.png' % t_i)
+                utils.montage(
+                    recon.reshape([-1] + crop_shape),
+                    'imgs/reconstruction_%08d.png' % t_i)
                 t_i += 1
 
             if batch_i % 100 == 0:
                 # Save the variables to disk.
-                save_path = saver.save(sess, ckpt_name,
-                                       global_step=batch_i,
-                                       write_meta_graph=False)
+                save_path = saver.save(
+                    sess,
+                    ckpt_name,
+                    global_step=batch_i,
+                    write_meta_graph=False)
                 print("Model saved in file: %s" % save_path)
     except tf.errors.OutOfRangeError:
         print('Done training -- epoch limit reached')
@@ -652,7 +695,10 @@ def train_vaegan(files,
     sess.close()
 
 
-def test_celeb(n_epochs=100):
+def test_celeb(n_epochs=100,
+               filter_sizes=[3, 3, 3, 3],
+               n_filters=[100, 100, 100, 100],
+               crop_shape=[100, 100, 3]):
     """Summary
 
     Parameters
@@ -670,15 +716,15 @@ def test_celeb(n_epochs=100):
         files=files,
         batch_size=64,
         n_epochs=n_epochs,
-        crop_shape=[100, 100, 3],
+        crop_shape=crop_shape,
         crop_factor=0.8,
         input_shape=[218, 178, 3],
         convolutional=True,
         variational=True,
-        n_filters=[100, 100, 100, 100],
+        n_filters=n_filters,
         n_hidden=None,
         n_code=64,
-        filter_sizes=[3, 3, 3, 3],
+        filter_sizes=filter_sizes,
         activation=tf.nn.elu,
         ckpt_name='./celeb.ckpt')
 
@@ -697,7 +743,8 @@ def test_sita(n_epochs=100):
         Description
     """
     if not os.path.exists('sita'):
-        os.system('wget http://ossguy.com/sita/Sita_Sings_the_Blues_640x360_XviD.avi')
+        os.system(
+            'wget http://ossguy.com/sita/Sita_Sings_the_Blues_640x360_XviD.avi')
         os.mkdir('sita')
         os.system('ffmpeg -i Sita_Sings_the_Blues_640x360_XviD.avi -r 60 -f' +
                   ' image2 -s 160x90 sita/sita-%08d.jpg')
