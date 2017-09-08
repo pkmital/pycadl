@@ -86,3 +86,35 @@ Examples of each module's use can be found in the tests folder.
 # Contributing
 
 Contributions, such as other model architectures, bug fixes, dataset handling, etc... are welcome and should be filed on the GitHub.
+
+# Troubleshooting
+
+## Error: alsa/asoundlib.h: No such file or directory
+
+```
+  src/RtMidi.cpp:1101:28: fatal error: alsa/asoundlib.h: No such file or directory
+  compilation terminated.
+  error: command 'gcc' failed with exit status 1
+```
+
+This is a dependency of `magenta` (`python-rtmidi`) which requires `libasound`.
+
+### Solution: Install ALSA
+
+CentOS:
+
+```
+sudo yum install alsa-lib-devel alsa-utils
+```
+
+Ubuntu:
+
+```
+sudo apt-get install libasound2-dev
+```
+
+### More info:
+
+https://python-rtmidi.readthedocs.io/en/latest/installation.html
+https://github.com/tensorflow/magenta/issues/781
+
