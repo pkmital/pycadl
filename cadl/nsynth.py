@@ -379,7 +379,7 @@ class Config(object):
                 filter_length=ae_filter_length,
                 name='ae_startconv')
 
-            for num_layer in xrange(ae_num_layers):
+            for num_layer in range(ae_num_layers):
                 dilation = 2**(num_layer % ae_num_stages)
                 d = tf.nn.relu(en)
                 d = masked.conv1d(
