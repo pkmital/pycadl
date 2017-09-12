@@ -316,7 +316,7 @@ def filter_image(x, F_x, F_y, log_gamma, A, B, C, N, inverted=False):
                 glimpses = []
                 for x_i in xs:
                     glimpses.append(
-                        tf.matmul(F_y, tf.matmul(tf.squeeze(x_i), F_x)))
+                        tf.matmul(F_y, tf.matmul(tf.squeeze(x_i, axis=[3]), F_x)))
                 glimpse = tf.concat(
                     [tf.expand_dims(x_i, -1) for x_i in glimpses], axis=3)
         else:
@@ -331,7 +331,7 @@ def filter_image(x, F_x, F_y, log_gamma, A, B, C, N, inverted=False):
                 glimpses = []
                 for x_i in xs:
                     glimpses.append(
-                        tf.matmul(F_y, tf.matmul(tf.squeeze(x_i), F_x)))
+                        tf.matmul(F_y, tf.matmul(tf.squeeze(x_i, axis=[3]), F_x)))
                 glimpse = tf.concat(
                     [tf.expand_dims(x_i, -1) for x_i in glimpses], axis=3)
         # Finally, we'll flatten the filtered image to a vector
