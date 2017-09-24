@@ -27,6 +27,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import os
 import numpy as np
 import tensorflow as tf
 from cadl import librispeech
@@ -159,6 +160,52 @@ def create_generation_model(n_stages=5, n_layers_per_stage=10,
         'probs': probs,
         'synthesis': synthesis
     }
+
+
+def train_librispeech():
+    dataset = librispeech.get_dataset(convert_to_wav=False)
+    it_i = 0
+    n_epochs = 10000
+
+    batch_size = 32
+    n_stages = 6
+    n_layers_per_stage = 9
+    n_hidden = 32
+    filter_length = 2
+    n_skip = 256
+
+    sequence_length = get_sequence_length(n_stages, n_layers_per_stage)
+    ckpt_path = 'vctk-wavenet/wavenet_filterlen{}_batchsize{}_sequencelen{}_stages{}_layers{}_hidden{}_skips{}/'.format(
+        filter_length, batch_size, sequence_length,
+        n_stages, n_layers_per_stage, n_hidden, n_skip)
+    with tf.Graph().as_default() as g, tf.Session(graph=g) as sess:
+        net = create_generation_model(n_stages=n_stages,
+                n_layers_per_stage=n_layers_per_stage,
+                n_hidden=n_hidden,
+                batch_size=batch_size,
+                n_skip=n_skip,
+                filter_length=filter_length)
+        batch = librispeech.batch_generator
+        opt = tf.train.AdamOptimizer(learning_rate=0.00001).minimize(
+                net['loss'])
+        sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
+        writer = tf.summary.FileWriter(ckpt_path)
+        if tf.train.latest_checkpoint(ckpt_path) is not None:
+            saver.restore(sess, tf.train.latest_checkpoint(ckpt_path))
+        for epoch_i in range(n_epochs):
+            for batch_xs, batch_hs in batch(dataset, batch_size, sequence_length):
+                loss, _ = sess.run([net['loss'], opt], feed_dict={
+                    net['X']: batch_xs})
+                print(loss)
+                if it_i % 100 == 0:
+                    summary = sess.run(net['summaries'], feed_dict={
+                        net['X']: batch_xs})
+                    writer.add_summary(summary, it_i)
+                    saver.save(sess,
+                            os.path.join(ckpt_path, 'model.ckpt'),
+                            global_step=it_i)
+                it_i += 1
 
 
 def test_librispeech():

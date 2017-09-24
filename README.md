@@ -118,3 +118,21 @@ sudo apt-get install libasound2-dev
 https://python-rtmidi.readthedocs.io/en/latest/installation.html
 https://github.com/tensorflow/magenta/issues/781
 
+## Error: jack/jack.h: No such file or directory
+
+```
+src/RtMidi.cpp:2448:23: fatal error: jack/jack.h: No such file or directory
+compilation terminated.
+```
+
+### Solution: Install Jack
+
+Ubuntu:
+```
+sudo apt install libjack-dev
+```
+
+### More info:
+
+https://python-rtmidi.readthedocs.io/en/latest/installation.html
+https://github.com/tensorflow/magenta/issues/781
