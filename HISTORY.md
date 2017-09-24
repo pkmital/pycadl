@@ -1,4 +1,7 @@
 
+# 1.0.4
+
+* Allow for batch=1 in DRAW code
 
 # 1.0.3
 
