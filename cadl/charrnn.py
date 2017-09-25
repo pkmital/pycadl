@@ -401,14 +401,14 @@ def test_trump(max_iter=100):
         Description
     """
     utils.download(
-        'https://s3.amazonaws.com/cadl/models/trump.data-00000-of-00001')
-    utils.download('https://s3.amazonaws.com/cadl/models/trump.meta')
-    utils.download('https://s3.amazonaws.com/cadl/models/trump.index')
+        'https://s3.amazonaws.com/cadl/models/trump.ckpt.data-00000-of-00001')
+    utils.download('https://s3.amazonaws.com/cadl/models/trump.ckpt.meta')
+    utils.download('https://s3.amazonaws.com/cadl/models/trump.ckpt.index')
     utils.download('https://s3.amazonaws.com/cadl/models/trump.txt')
     with open('trump.txt', 'r') as fp:
         txt = fp.read()
     #train(txt, ckpt_name='trump', max_iter=max_iter)
-    print(infer(txt, ckpt_name='./trump', n_iterations=max_iter))
+    print(infer(txt, ckpt_name='./trump.ckpt', n_iterations=max_iter))
 
 
 def test_wtc():

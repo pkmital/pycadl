@@ -24,13 +24,13 @@ from scipy.misc import imresize
 
 
 def gausspdf_np(x, mean, sigma):
-    return (np.exp((-(x - mean)**2 / (2 * sigma**2)) /
-           (np.sqrt(2.0 * np.pi) * sigma)))
+    return np.exp(-(x - mean)**2 /
+                  (2 * sigma**2)) / (np.sqrt(2.0 * np.pi) * sigma)
 
 
 def gausspdf(x, mean, sigma):
-    return (tf.exp((-(x - mean)**2 / (2 * sigma**2)) /
-           (tf.sqrt(2.0 * np.pi) * sigma)))
+    return tf.exp(-(x - mean)**2 /
+                  (2 * sigma**2)) / (tf.sqrt(2.0 * np.pi) * sigma)
 
 
 def build_single_gaussian_model(n_input_features=2,

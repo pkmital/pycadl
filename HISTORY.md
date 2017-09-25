@@ -1,4 +1,8 @@
 
+# 1.0.5
+
+* Fix gauss pdf
+
 # 1.0.4
 
 * Allow for batch=1 in DRAW code
