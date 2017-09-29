@@ -50,13 +50,13 @@ def build_single_gaussian_model(n_input_features=2,
     means = tfl.linear(
         inputs=current_input,
         num_outputs=n_output_features,
-        activation_fn=tf.nn.sigmoid,
+        activation_fn=None,
         scope='means')
     sigmas = tf.maximum(
         tfl.linear(
             inputs=current_input,
             num_outputs=n_output_features,
-            activation_fn=tf.nn.sigmoid,
+            activation_fn=tf.nn.relu,
             scope='sigmas'), 1e-10)
 
     p = gausspdf(Y, means, sigmas)
@@ -131,14 +131,14 @@ def build_multiple_gaussians_model(n_input_features=2,
         tfl.linear(
             inputs=current_input,
             num_outputs=n_output_features * n_gaussians,
-            activation_fn=tf.nn.sigmoid,
+            activation_fn=None,
             scope='means'), [-1, n_output_features, n_gaussians])
     sigmas = tf.maximum(
         tf.reshape(
             tfl.linear(
                 inputs=current_input,
                 num_outputs=n_output_features * n_gaussians,
-                activation_fn=tf.nn.sigmoid,
+                activation_fn=tf.nn.relu,
                 scope='sigmas'), [-1, n_output_features, n_gaussians]), 1e-10)
     weights = tf.reshape(
         tfl.linear(
