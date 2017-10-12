@@ -1,3 +1,13 @@
+# 1.0.7
+
+* NSynth batch processing code from magenta repo
+* `get_model` function in `nsynth` module now attempts to download and untar the model from the magenta website.
+* `utils.download` functions default to local dir
+* Separate encode functionality in nsynth module.
+
+# 1.0.6
+
+* MDN activation fn
 
 # 1.0.5
 
