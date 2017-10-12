@@ -490,7 +490,7 @@ def load_fastgen_nsynth(batch_size=1, sample_length=64000):
     TYPE
         Description
     """
-    config = FastGenerationConfig()
+    config = FastGenerationConfig(batch_size)
     X = tf.placeholder(tf.float32, shape=[batch_size, 1])
     graph = config.build({"wav": X})
     graph.update({'X': X})
