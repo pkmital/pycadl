@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-__version__ = 'v1.0.7'
+__version__ = 'v1.0.8'
 __all__ = ['batch_norm', 'celeb_vaegan', 'charrnn', 'cornell', 'cycle_gan',
         'datasets', 'dataset_utils', 'deepdream', 'dft', 'draw', 'fastwavenet',
         'gan', 'gif', 'glove', 'i2v', 'inception', 'librispeech', 'magenta_utils',

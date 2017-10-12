@@ -1,3 +1,7 @@
+# 1.0.8
+
+* Batch loading support from magenta repo for FastGen config
+
 # 1.0.7
 
 * NSynth batch processing code from magenta repo
