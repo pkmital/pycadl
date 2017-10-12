@@ -104,7 +104,7 @@ def download(path):
     return fname
 
 
-def download_and_extract_tar(path, dst):
+def download_and_extract_tar(path, dst='./'):
     """Download and extract a tar file.
     
     Parameters
@@ -121,7 +121,7 @@ def download_and_extract_tar(path, dst):
         tarfile.open(filepath, 'r:gz').extractall(dst)
 
 
-def download_and_extract_zip(path, dst):
+def download_and_extract_zip(path, dst='./'):
     """Download and extract a zip file.
     
     Parameters

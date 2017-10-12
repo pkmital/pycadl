@@ -24,19 +24,22 @@ limitations under the License.
 import tensorflow as tf
 from scipy.io import wavfile
 import numpy as np
+from cadl.utils import download_and_extract_tar
 from magenta.models.nsynth import utils
 from magenta.models.nsynth import reader
 from magenta.models.nsynth.wavenet import masked
-from skimage.transform import resize
+import os
 
 
 def get_model():
     """Summary
     """
-    pass
+    download_and_extract_tar(
+        'http://download.magenta.tensorflow.org/models/nsynth/wavenet-ckpt.tar')
 
 
-def causal_linear(x, n_inputs, n_outputs, name, filter_length, rate, batch_size):
+def causal_linear(x, n_inputs, n_outputs, name, filter_length, rate,
+                  batch_size):
     """Summary
 
     Parameters
@@ -62,18 +65,10 @@ def causal_linear(x, n_inputs, n_outputs, name, filter_length, rate, batch_size)
         Description
     """
     # create queue
-    q_1 = tf.FIFOQueue(
-        rate,
-        dtypes=tf.float32,
-        shapes=(batch_size, n_inputs))
-    q_2 = tf.FIFOQueue(
-        rate,
-        dtypes=tf.float32,
-        shapes=(batch_size, n_inputs))
-    init_1 = q_1.enqueue_many(
-        tf.zeros((rate, batch_size, n_inputs)))
-    init_2 = q_2.enqueue_many(
-        tf.zeros((rate, batch_size, n_inputs)))
+    q_1 = tf.FIFOQueue(rate, dtypes=tf.float32, shapes=(batch_size, n_inputs))
+    q_2 = tf.FIFOQueue(rate, dtypes=tf.float32, shapes=(batch_size, n_inputs))
+    init_1 = q_1.enqueue_many(tf.zeros((rate, batch_size, n_inputs)))
+    init_2 = q_2.enqueue_many(tf.zeros((rate, batch_size, n_inputs)))
     state_1 = q_1.dequeue()
     push_1 = q_1.enqueue(x)
     state_2 = q_2.dequeue()
@@ -85,19 +80,16 @@ def causal_linear(x, n_inputs, n_outputs, name, filter_length, rate, batch_size)
         shape=[1, filter_length, n_inputs, n_outputs],
         dtype=tf.float32)
     b = tf.get_variable(
-        name=name + '/biases',
-        shape=[n_outputs],
-        dtype=tf.float32)
+        name=name + '/biases', shape=[n_outputs], dtype=tf.float32)
     W_q_2 = tf.slice(W, [0, 0, 0, 0], [-1, 1, -1, -1])
     W_q_1 = tf.slice(W, [0, 1, 0, 0], [-1, 1, -1, -1])
     W_x = tf.slice(W, [0, 2, 0, 0], [-1, 1, -1, -1])
 
     # perform op w/ cached states
-    y = tf.expand_dims(tf.nn.bias_add(
-        tf.matmul(state_2, W_q_2[0][0]) +
-        tf.matmul(state_1, W_q_1[0][0]) +
-        tf.matmul(x, W_x[0][0]),
-        b), 0)
+    y = tf.expand_dims(
+        tf.nn.bias_add(
+            tf.matmul(state_2, W_q_2[0][0]) + tf.matmul(state_1, W_q_1[0][0]) +
+            tf.matmul(x, W_x[0][0]), b), 0)
     return y, (init_1, init_2), (push_1, push_2)
 
 
@@ -121,13 +113,9 @@ def linear(x, n_inputs, n_outputs, name):
         Description
     """
     W = tf.get_variable(
-        name=name + '/W',
-        shape=[1, 1, n_inputs, n_outputs],
-        dtype=tf.float32)
+        name=name + '/W', shape=[1, 1, n_inputs, n_outputs], dtype=tf.float32)
     b = tf.get_variable(
-        name=name + '/biases',
-        shape=[n_outputs],
-        dtype=tf.float32)
+        name=name + '/biases', shape=[n_outputs], dtype=tf.float32)
     return tf.expand_dims(tf.nn.bias_add(tf.matmul(x[0], W[0][0]), b), 0)
 
 
@@ -172,9 +160,7 @@ class FastGenerationConfig(object):
         x_scaled = tf.expand_dims(x_scaled, 2)
 
         encoding = tf.placeholder(
-            name='encoding',
-            shape=[num_z],
-            dtype=tf.float32)
+            name='encoding', shape=[num_z], dtype=tf.float32)
         en = tf.expand_dims(tf.expand_dims(encoding, 0), 0)
 
         init_ops, push_ops = [], []
@@ -401,13 +387,12 @@ class Config(object):
                 num_filters=self.ae_bottleneck_width,
                 filter_length=1,
                 name='ae_bottleneck')
-            en = masked.pool1d(en, self.ae_hop_length, name='ae_pool', mode='avg')
+            en = masked.pool1d(
+                en, self.ae_hop_length, name='ae_pool', mode='avg')
             encoding = en
         else:
             encoding = en = tf.placeholder(
-                name='ae_pool',
-                shape=[1, 125, 16],
-                dtype=tf.float32)
+                name='ae_pool', shape=[1, 125, 16], dtype=tf.float32)
 
         ###
         # The WaveNet Decoder.
@@ -443,14 +428,16 @@ class Config(object):
             d = d_sigmoid * d_tanh
 
             l += masked.conv1d(
-                d, num_filters=width, filter_length=1,
-                name='res_%d' % (i + 1))
+                d, num_filters=width, filter_length=1, name='res_%d' % (i + 1))
             s += masked.conv1d(
-                d, num_filters=skip_width, filter_length=1,
+                d,
+                num_filters=skip_width,
+                filter_length=1,
                 name='skip_%d' % (i + 1))
 
         s = tf.nn.relu(s)
-        s = masked.conv1d(s, num_filters=skip_width, filter_length=1, name='out1')
+        s = masked.conv1d(
+            s, num_filters=skip_width, filter_length=1, name='out1')
         s = self._condition(s,
                             masked.conv1d(
                                 en,
@@ -462,7 +449,8 @@ class Config(object):
         ###
         # Compute the logits and get the loss.
         ###
-        logits = masked.conv1d(s, num_filters=256, filter_length=1, name='logits')
+        logits = masked.conv1d(
+            s, num_filters=256, filter_length=1, name='logits')
         logits = tf.reshape(logits, [-1, 256])
         probs = tf.nn.softmax(logits, name='softmax')
         x_indices = tf.cast(tf.reshape(x_quantized, [-1]), tf.int32) + 128
@@ -546,8 +534,7 @@ def load_nsynth(encoding=True, batch_size=1, sample_length=64000):
     """
     config = Config(encoding=encoding)
     with tf.device('/gpu:0'):
-        X = tf.placeholder(
-            tf.float32, shape=[batch_size, sample_length])
+        X = tf.placeholder(tf.float32, shape=[batch_size, sample_length])
         graph = config.build({"wav": X}, is_training=False)
         graph.update({'X': X})
     return graph
@@ -569,93 +556,144 @@ def load_fastgen_nsynth(batch_size=1, sample_length=64000):
         Description
     """
     config = FastGenerationConfig()
-    X = tf.placeholder(
-        tf.float32, shape=[batch_size, 1])
+    X = tf.placeholder(tf.float32, shape=[batch_size, 1])
     graph = config.build({"wav": X})
     graph.update({'X': X})
     return graph
 
 
-def synthesize(wav_file, out_file='synthesis.wav',
-               sample_length=64000,
-               synth_length=16000,
-               ckpt_path='./model.ckpt-200000',
-               resample_encoding=False):
-    """Summary
-
-    Parameters
-    ----------
-    wav_file : TYPE
-        Description
-    out_file : str, optional
-        Description
-    sample_length : int, optional
-        Description
-    synth_length : int, optional
-        Description
-    ckpt_path : str, optional
-        Description
-    resample_encoding : bool, optional
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
+def sample_categorical(pmf):
+    """Sample from a categorical distribution.
+    Args:
+        pmf: Probablity mass function. Output of a softmax over categories.
+            Array of shape [batch_size, number of categories]. Rows sum to 1.
+    Returns:
+        idxs: Array of size [batch_size, 1]. Integer of category sampled.
     """
-    # Audio to resynthesize
-    wav_data = load_audio(wav_file, sample_length)
+    if pmf.ndim == 1:
+        pmf = np.expand_dims(pmf, 0)
+    batch_size = pmf.shape[0]
+    cdf = np.cumsum(pmf, axis=1)
+    rand_vals = np.random.rand(batch_size)
+    idxs = np.zeros([batch_size, 1])
+    for i in range(batch_size):
+        idxs[i] = cdf[i].searchsorted(rand_vals[i])
+    return idxs
 
-    # Load up the model for encoding and find the encoding of 'wav_data'
-    with tf.Graph().as_default(), tf.Session() as sess:
-        net = load_nsynth(encoding=True)
+
+def load_batch(files, sample_length=64000):
+    """Load a batch of data from either .wav or .npy files.
+    Args:
+        files: A list of filepaths to .wav or .npy files
+        sample_length: Maximum sample length
+    Returns:
+        batch_data: A padded array of audio or embeddings [batch, length, (dims)]
+    """
+    batch_data = []
+    max_length = 0
+    is_npy = (os.path.splitext(files[0])[1] == ".npy")
+    # Load the data
+    for f in files:
+        if is_npy:
+            data = np.load(f)
+            batch_data.append(data)
+        else:
+            data = utils.load_audio(f, sample_length, sr=16000)
+            batch_data.append(data)
+        if data.shape[0] > max_length:
+            max_length = data.shape[0]
+    # Add padding
+    for i, data in enumerate(batch_data):
+        if data.shape[0] < max_length:
+            if is_npy:
+                padded = np.zeros([max_length, +data.shape[1]])
+                padded[:data.shape[0], :] = data
+            else:
+                padded = np.zeros([max_length])
+                padded[:data.shape[0]] = data
+            batch_data[i] = padded
+    # Return arrays
+    batch_data = np.array(batch_data)
+    return batch_data
+
+
+def save_batch(batch_audio, batch_save_paths):
+    for audio, name in zip(batch_audio, batch_save_paths):
+        tf.logging.info("Saving: %s" % name)
+        wavfile.write(name, 16000, audio)
+
+
+def encode(wav_data, checkpoint_path, sample_length=64000):
+    """Generate an array of embeddings from an array of audio.
+    Args:
+        wav_data: Numpy array [batch_size, sample_length]
+        checkpoint_path: Location of the pretrained model.
+        sample_length: The total length of the final wave file, padded with 0s.
+    Returns:
+        encoding: a [mb, 125, 16] encoding (for 64000 sample audio file).
+    """
+    if wav_data.ndim == 1:
+        wav_data = np.expand_dims(wav_data, 0)
+        batch_size = 1
+    elif wav_data.ndim == 2:
+        batch_size = wav_data.shape[0]
+
+    # Load up the model for encoding and find the encoding of "wav_data"
+    session_config = tf.ConfigProto(allow_soft_placement=True)
+    with tf.Graph().as_default(), tf.Session(config=session_config) as sess:
+        hop_length = Config().ae_hop_length
+        wav_data, sample_length = utils.trim_for_encoding(
+            wav_data, sample_length, hop_length)
+        net = load_nsynth(batch_size=batch_size, sample_length=sample_length)
         saver = tf.train.Saver()
-        saver.restore(sess, ckpt_path)
-        encoding = sess.run(net['encoding'], feed_dict={
-            net['X']: wav_data})[0]
+        saver.restore(sess, checkpoint_path)
+        encodings = sess.run(net["encoding"], feed_dict={net["X"]: wav_data})
+    return encodings
 
-    # Resample encoding to sample_length
-    encoding_length = encoding.shape[0]
-    if resample_encoding:
-        max_val = np.max(np.abs(encoding))
-        encoding = resize(encoding / max_val, (sample_length, 16))
-        encoding = (encoding * max_val).astype(np.float32)
 
-    with tf.Graph().as_default(), tf.Session() as sess:
-        net = load_fastgen_nsynth()
+def synthesize(encodings,
+               save_paths,
+               checkpoint_path="model.ckpt-200000",
+               samples_per_save=1000):
+    """Synthesize audio from an array of embeddings.
+    Args:
+        encodings: Numpy array with shape [batch_size, time, dim].
+        save_paths: Iterable of output file names.
+        checkpoint_path: Location of the pretrained model. [model.ckpt-200000]
+        samples_per_save: Save files after every amount of generated samples.
+    """
+    hop_length = Config().ae_hop_length
+    # Get lengths
+    batch_size = encodings.shape[0]
+    encoding_length = encodings.shape[1]
+    total_length = encoding_length * hop_length
+
+    session_config = tf.ConfigProto(allow_soft_placement=True)
+    with tf.Graph().as_default(), tf.Session(config=session_config) as sess:
+        net = load_fastgen_nsynth(batch_size=batch_size)
         saver = tf.train.Saver()
-        saver.restore(sess, ckpt_path)
+        saver.restore(sess, checkpoint_path)
 
         # initialize queues w/ 0s
-        sess.run(net['init_ops'])
+        sess.run(net["init_ops"])
 
         # Regenerate the audio file sample by sample
-        wav_synth = np.zeros((sample_length,),
-                             dtype=np.float32)
-        audio = np.float32(0)
+        audio_batch = np.zeros((batch_size, total_length,), dtype=np.float32)
+        audio = np.zeros([batch_size, 1])
 
-        for sample_i in range(synth_length):
-            print(sample_i)
-            if resample_encoding:
-                enc_i = sample_i
-            else:
-                enc_i = int(sample_i /
-                            float(sample_length) *
-                            float(encoding_length))
-            res = sess.run(
-                [net['predictions'], net['push_ops']],
+        for sample_i in range(total_length):
+            enc_i = sample_i // hop_length
+            pmf = sess.run(
+                [net["predictions"], net["push_ops"]],
                 feed_dict={
-                    net['X']: np.atleast_2d(audio),
-                    net['encoding']: encoding[enc_i]})[0]
-            cdf = np.cumsum(res)
-            idx = np.random.rand()
-            i = 0
-            while(cdf[i] < idx):
-                i = i + 1
-            audio = inv_mu_law(i - 128)
-            wav_synth[sample_i] = audio
-
-    wavfile.write(out_file, 16000, wav_synth)
-
-    sess.close()
-    return wav_synth
+                    net["X"]: audio,
+                    net["encoding"]: encodings[:, enc_i, :]
+                })[0]
+            sample_bin = sample_categorical(pmf)
+            audio = utils.inv_mu_law_numpy(sample_bin - 128)
+            audio_batch[:, sample_i] = audio[:, 0]
+            if sample_i % 100 == 0:
+                tf.logging.info("Sample: %d" % sample_i)
+            if sample_i % samples_per_save == 0:
+                save_batch(audio_batch, save_paths)
+    save_batch(audio_batch, save_paths)
