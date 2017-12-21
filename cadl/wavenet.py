@@ -380,7 +380,7 @@ def train_vctk():
     ckpt_path = 'vctk-wavenet/wavenet_filterlen{}_batchsize{}_sequencelen{}_stages{}_layers{}_hidden{}_skips{}'.format(
         filter_length, batch_size, sequence_length, n_stages,
         n_layers_per_stage, n_hidden, n_skip)
-    with tf.graph().as_default(), tf.session() as sess:
+    with tf.Graph().as_default(), tf.Session() as sess:
         net = create_wavenet(
             batch_size=batch_size,
             filter_length=filter_length,
@@ -388,7 +388,7 @@ def train_vctk():
             n_skip=n_skip,
             n_stages=n_stages,
             n_layers_per_stage=n_layers_per_stage)
-        saver = tf.train.saver()
+        saver = tf.train.Saver()
         init_op = tf.group(tf.global_variables_initializer(),
                            tf.local_variables_initializer())
         sess.run(init_op)
@@ -396,22 +396,22 @@ def train_vctk():
             saver.restore(sess, tf.train.latest_checkpoint(ckpt_path))
         batch = vctk.batch_generator
         with tf.variable_scope('optimizer'):
-            opt = tf.train.adamoptimizer(
+            opt = tf.train.AdamOptimizer(
                 learning_rate=0.0002).minimize(net['loss'])
         var_list = [
             v for v in tf.global_variables() if v.name.startswith('optimizer')
         ]
         sess.run(tf.variables_initializer(var_list))
-        writer = tf.summary.filewriter(ckpt_path)
+        writer = tf.summary.FileWriter(ckpt_path)
         for epoch_i in range(n_epochs):
             for batch_xs in batch(dataset, batch_size, sequence_length):
                 loss, quantized, _ = sess.run(
                     [net['loss'], net['quantized'], opt],
-                    feed_dict={net['x']: batch_xs})
+                    feed_dict={net['X']: batch_xs})
                 print(loss)
                 if it_i % 100 == 0:
                     summary = sess.run(
-                        net['summaries'], feed_dict={net['x']: batch_xs})
+                        net['summaries'], feed_dict={net['X']: batch_xs})
                     writer.add_summary(summary, it_i)
                     # save
                     saver.save(
