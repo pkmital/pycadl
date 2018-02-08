@@ -223,7 +223,7 @@ def residual_block(x, n_channels=128, kernel_size=3, scope=None):
             kernel_size=kernel_size,
             padding='VALID',
             scope='1')
-        h = tf.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
+        h = tf.pad(h, [[0, 0], [1, 1], [1, 1], [0, 0]], "REFLECT")
         h = conv2d(
             inputs=h,
             num_outputs=n_channels,
