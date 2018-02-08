@@ -588,6 +588,7 @@ def encode(wav_data, checkpoint_path, sample_length=64000):
 
 def synthesize(encodings,
                save_paths,
+               hop_length=None,
                checkpoint_path="model.ckpt-200000",
                samples_per_save=1000):
     """Synthesize audio from an array of embeddings.
@@ -597,7 +598,8 @@ def synthesize(encodings,
         checkpoint_path: Location of the pretrained model. [model.ckpt-200000]
         samples_per_save: Save files after every amount of generated samples.
     """
-    hop_length = Config().ae_hop_length
+    if hop_length is None:
+        hop_length = Config().ae_hop_length
     # Get lengths
     batch_size = encodings.shape[0]
     encoding_length = encodings.shape[1]
