@@ -40,7 +40,7 @@ def shift_right(X):
     """
     shape = X.get_shape().as_list()
     x_padded = tf.pad(X, [[0, 0], [1, 0], [0, 0]])
-    x_sliced = tf.slice(x_padded, [0, 0, 0], tf.stack([-1, shape[1], -1]))
+    x_sliced = tf.slice(x_padded, [0, 0, 0], tf.stack([-1, np.int32(shape[1]), -1]))
     x_sliced.set_shape(shape)
     return x_sliced
 

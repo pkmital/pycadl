@@ -1,3 +1,12 @@
+
+# 1.1.0
+
+* Requirements now points to 1.5.0 TensorFlow
+
+# 1.0.9
+
+* Residual block in CycleGAN was not using first convolutional layer
+
 # 1.0.8
 
 * Batch loading support from magenta repo for FastGen config
