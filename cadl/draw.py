@@ -844,7 +844,7 @@ def train_input_pipeline(
         utils.montage(test_xs.reshape((-1, A, B, C)), 'test_xs.png')
         try:
             while not coord.should_stop() and epoch_i < n_epochs:
-                batch_xs = sess.run(batch) / 255.0
+                batch_xs = sess.run(batch)
                 noise = np.random.randn(batch_size, n_z)
                 lx, lz = sess.run(
                     [draw['loss_x'], draw['loss_z'], train_op],
