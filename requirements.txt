@@ -1,6 +1,6 @@
 setuptools==36.4.0
 matplotlib==2.0.2
-requests==2.18.4
+requests==2.20.0
 magenta==0.3.1
 scipy==0.19.1
 scikit_image==0.13.0
