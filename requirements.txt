@@ -1,4 +1,4 @@
-setuptools==36.4.0
+setuptools==65.5.1
 matplotlib==2.0.2
 requests==2.18.4
 magenta==0.3.1
